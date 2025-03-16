@@ -2,11 +2,9 @@
 
 Important Notes:
 
+**Option 1: Predict Phylum First, Then Family**
 
-#IMPORTANT NOTES
-
-* **Option 1: Predict Phylum First, Then Family**
-  * We can first predict the phylum and then predict the family based on the predicted phylum.
+* * We can first predict the phylum and then predict the family based on the predicted phylum.
   * This approach may require different preprocessing steps for each phylum, depending on the species within them.
   * The images will need to be divided and processed based on their phylum and family before training.
 * **Option 2: General Preprocessing for All Classes**
