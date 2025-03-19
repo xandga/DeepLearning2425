@@ -14,7 +14,6 @@
 
 This decision will affect how we approach the preprocessing and model structure for our task.
 
-
 ## **19/03 Class**
 
 ### Project Tips
@@ -25,15 +24,13 @@ This decision will affect how we approach the preprocessing and model structure 
 
 **using the resizing that keras provided or with the image data loading**
 
-
 * other problem that we will have *overfitting*: we can try data augmentation [Data augmentation  |  TensorFlow Core](https://www.tensorflow.org/tutorials/images/data_augmentation) or [Image augmentation layers](https://keras.io/api/layers/preprocessing_layers/image_augmentation/)
 * we can use random zoom for data augmentation
 * change the darkness/brigthness
 
-⚠️exagerating the data augmentation can destroy the patterns that we need for the model to earn
+⚠️exagerating the data augmentation can destroy the patterns that we need for the model to learn
 
 * try to use some [Keras Applications](https://keras.io/api/applications/)  - which provide pre-trained models that can be fine-tuned for your task. Since these models are already trained, update the weights **gradually** to preserve learned features. Additionally, **reduce the learning rate** to avoid overwriting existing knowledge while allowing the model to adapt to your dataset.
-
 
 ### Extra Notes (not directly related with the Project)
 
