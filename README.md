@@ -37,3 +37,8 @@ This decision will affect how we approach the preprocessing and model structure 
 * Training a model from scratch can lead to high variability, making it harder to converge effectively.
 * Adding more layers can worsen the issue, as **nonlinear transformations** can introduce instability, especially when applied to **initially linear inputs** resulting in a highly nonlinear output.
 * One way to address this challenge is by using a  **Residual Neural Network (ResNet)** , which helps maintain stable learning by allowing the model to learn residual mappings rather than full transformations.
+
+## **26/03 Class**
+
+* leaky relu vs relu
+* Gated recurrent unit
