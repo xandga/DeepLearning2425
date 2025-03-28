@@ -1,3 +1,6 @@
 rare_species 1.zip
 \rare_species
 \data_splits
+\tf-gpu
+cuda-keyring_1.1-1_all.deb
+libtinfo5_6.3-2ubuntu0.1_amd64.deb
