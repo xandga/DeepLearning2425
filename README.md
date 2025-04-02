@@ -42,3 +42,14 @@ This decision will affect how we approach the preprocessing and model structure 
 
 * leaky relu vs relu
 * Gated recurrent unit
+
+## **04/02 Class**
+
+⚠️ we can use phylum but we need to justify 
+
+* If the gradient becomes too small (vanishing), training may get stuck at a suboptimal point, preventing the model from reaching the global optimum.
+* If the gradient is too large (exploding), the model may overshoot and miss the global optimum.
+* A drawback of LSTMs is their computational cost, making them potentially expensive to train.
+* Pooling operations can be used to reduce the dimensionality of the data.
+
+⚠️We can explore pre-trained models from [Hugging Face](https://huggingface.co/models) for our project.
