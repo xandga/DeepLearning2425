@@ -1,19 +1,5 @@
 # DeepLearning2425
 
-## Important Notes:
-
-**Option 1: Predict Phylum First, Then Family**
-
-* * We can first predict the phylum and then predict the family based on the predicted phylum.
-  * This approach may require different preprocessing steps for each phylum, depending on the species within them.
-  * The images will need to be divided and processed based on their phylum and family before training.
-* **Option 2: General Preprocessing for All Classes**
-  * We can treat the task as a classification problem for both phylum and family directly without separating them.
-  * This method will involve general preprocessing like resizing and cropping the images to a standard size before training.
-  * The preprocessing will be uniform for all images, regardless of their phylum or family.
-
-This decision will affect how we approach the preprocessing and model structure for our task.
-
 ## **19/03 Class**
 
 ### Project Tips
@@ -45,7 +31,7 @@ This decision will affect how we approach the preprocessing and model structure 
 
 ## **04/02 Class**
 
-⚠️ we can use phylum but we need to justify 
+⚠️ we can use phylum but we need to justify
 
 * If the gradient becomes too small (vanishing), training may get stuck at a suboptimal point, preventing the model from reaching the global optimum.
 * If the gradient is too large (exploding), the model may overshoot and miss the global optimum.
@@ -53,3 +39,13 @@ This decision will affect how we approach the preprocessing and model structure 
 * Pooling operations can be used to reduce the dimensionality of the data.
 
 ⚠️We can explore pre-trained models from [Hugging Face](https://huggingface.co/models) for our project.
+
+## Tasks
+
+- Clean/Improve notebook 1. Preprocessindd functions to utils and identify them
+- Built a VGG16 model function that can be used/applied in every notebook
+- Developed a final notebook and check how should that be contructed like
+  - how it does recieve the input?
+  - what will be the output? id of the image and the correspondent famiStart the report:
+- - introduction
+  - structure (split by phylum)![1743949362394](image/README/1743949362394.png)![1743949362394](image/README/1743949362394.png)
