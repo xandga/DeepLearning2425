@@ -7,3 +7,5 @@ libtinfo5_6.3-2ubuntu0.1_amd64.deb
 tf_env
 tf_env39
 rare_species 1
+/cudnn-linux-x86_64-9.8.0.87_cuda12-archive
+/models/cnidaria_models
