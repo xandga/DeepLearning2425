@@ -9,3 +9,5 @@ tf_env39
 rare_species 1
 /cudnn-linux-x86_64-9.8.0.87_cuda12-archive
 /models/cnidaria_models
+.DS_Store
+mollusca_classifier.h5
