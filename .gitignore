@@ -9,13 +9,16 @@ libtinfo5_6.3-2ubuntu0.1_amd64.deb
 tf_env
 tf_env39
 rare_species 1
+.DS_Store
+mollusca_classifier.h5
+mollusca_classifier_new.h5
 
 # cuda stuff 
 /cudnn-linux-x86_64-9.8.0.87_cuda12-archive
 /models/cnidaria_models
-.DS_Store
-mollusca_classifier.h5
+
 
 # package management from sven
 poetry.lock
 pyproject.toml
+
