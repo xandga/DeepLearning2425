@@ -4,6 +4,12 @@ rare_species 1.zip
 \data_splits
 \tf-gpu
 .DS_Store
+\train_test_splits\baseline_image_20.pkl
+\train_test_splits\baseline_image_20_test.pkl
+\train_test_splits\baseline_image_50.pkl
+\train_test_splits\baseline_image_50_test.pkl
+
+
 
 cuda-keyring_1.1-1_all.deb
 libtinfo5_6.3-2ubuntu0.1_amd64.deb
