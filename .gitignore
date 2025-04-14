@@ -27,3 +27,4 @@ rare_species 1
 poetry.lock
 pyproject.toml
 
+*.pkl
