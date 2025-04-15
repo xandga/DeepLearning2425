@@ -3,12 +3,20 @@ rare_species 1.zip
 \rare_species
 \data_splits
 /chordata_images
+/wandb
 cuda-keyring_1.1-1_all.deb
 \tf-gpu
+
+# zip files
+chordata_images.zip
+
+# other files
 libtinfo5_6.3-2ubuntu0.1_amd64.deb
 tf_env
 tf_env39
 rare_species 1
+# test out wandb weights and biases tool 
+wandb_test.py 
 
 # cuda stuff 
 /cudnn-linux-x86_64-9.8.0.87_cuda12-archive
@@ -19,3 +27,7 @@ mollusca_classifier.h5
 # package management from sven
 poetry.lock
 pyproject.toml
+
+# model files? what is that even
+/models
+model.h5
