@@ -3,15 +3,20 @@ rare_species 1.zip
 \rare_species
 \data_splits
 \tf-gpu
+.DS_Store
+\train_test_splits\baseline_image_20.pkl
+\train_test_splits\baseline_image_20_test.pkl
+\train_test_splits\baseline_image_50.pkl
+\train_test_splits\baseline_image_50_test.pkl
+
+
 
 cuda-keyring_1.1-1_all.deb
 libtinfo5_6.3-2ubuntu0.1_amd64.deb
 tf_env
 tf_env39
 rare_species 1
-.DS_Store
-mollusca_classifier.h5
-mollusca_classifier_new.h5
+
 
 # cuda stuff 
 /cudnn-linux-x86_64-9.8.0.87_cuda12-archive
@@ -22,3 +27,4 @@ mollusca_classifier_new.h5
 poetry.lock
 pyproject.toml
 
+*.pkl
