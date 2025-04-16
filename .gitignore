@@ -15,6 +15,7 @@ libtinfo5_6.3-2ubuntu0.1_amd64.deb
 tf_env
 tf_env39
 rare_species 1
+playground.ipynb
 # test out wandb weights and biases tool 
 wandb_test.py 
 
