@@ -9,15 +9,20 @@ cuda-keyring_1.1-1_all.deb
 \cleaned_chordata_images
 yolo/
 yolo_cleaned_datast/
+
+# folder for ClassicalNetworkChordata training
 ClassicalNetworkChordata/final_model/
 ClassicalNetworkChordata/models/
 ClassicalNetworkChordata/wandb/
+
+# Folders for pretrained
 PreTrainedNetworkChordata/runs/
 PreTrainedNetworkChordata/test/runs/
 PreTrainedNetworkChordata/test/additional_data/
 PreTrainedNetworkChordata/test/additional_data_val/
+PreTrainedNetworkChordata/test/chordate_families_subset.csv
 PreTrainedNetworkChordata/yolov8-chordata/
-
+PreTrainedNetworkChordata/test/chordate_families_subset.csv
 
 # zip files
 chordata_images.zip
