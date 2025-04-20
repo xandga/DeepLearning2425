@@ -6,6 +6,18 @@ rare_species 1.zip
 /wandb
 cuda-keyring_1.1-1_all.deb
 \tf-gpu
+\cleaned_chordata_images
+yolo/
+yolo_cleaned_datast/
+ClassicalNetworkChordata/final_model/
+ClassicalNetworkChordata/models/
+ClassicalNetworkChordata/wandb/
+PreTrainedNetworkChordata/runs/
+PreTrainedNetworkChordata/test/runs/
+PreTrainedNetworkChordata/test/additional_data/
+PreTrainedNetworkChordata/test/additional_data_val/
+PreTrainedNetworkChordata/yolov8-chordata/
+
 
 # zip files
 chordata_images.zip
@@ -27,8 +39,8 @@ mollusca_classifier.h5
 
 # package management from sven
 poetry.lock
-pyproject.toml
 
+pyproject.toml
 # model files? what is that even
 /models
 model.h5
