@@ -1,0 +1,10 @@
+{
+    "project": "chordata_classification",
+    "data_path": "cleaned_dataset",
+    "batch_size": 32,
+    "img_height": 224,
+    "img_width": 224,
+    "epochs": 5,
+    "learning_rate": 0.001,
+    "num_classes": 166
+  }

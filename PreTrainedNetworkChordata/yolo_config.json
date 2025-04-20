@@ -1,0 +1,8 @@
+{
+    "data": "yolo.yaml",
+    "project": "yolo8_chordata",
+    "epochs": 30,
+    "batch": 16, 
+    "imgsz": 224,
+    "learning_rate": 0.001
+  }
