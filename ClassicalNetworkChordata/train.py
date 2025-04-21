@@ -1,31 +1,86 @@
 # Standard libraries
-import os
-import matplotlib.pyplot as plt
-import zipfile
-import seaborn as sns
-import random
 import sys
 import json # for loading in config file
-
-# Libraries for data manipulation and analysis
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import confusion_matrix
-
-# Libraries for image processing
-from glob import glob
-from PIL import Image
-
 # Libraries for deep learning
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras import layers
-from tensorflow.keras.utils import to_categorical, image_dataset_from_directory
-from tensorflow.keras.regularizers import l2
+
+
+# from tensorflow.keras.utils import to_categorical, image_dataset_from_directory
+# from tensorflow.keras.regularizers import l2
 
 from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
 import wandb
+
+
+# create a configlass that saves all basic parameter
+
+class Config:
+
+    def __init__(self, 
+                 image_dir: str = '../data'
+                 image_height int = 224, 
+                 image_width int = 224,
+                 learning_rate: float = 1e-3,
+                 model_dir: str = "saved_models",
+                 validation_split: float = 0.2,
+                 batch_size: int = 32):
+
+            self.image_dir = image_dir
+            self.image_height = image_height
+            self.image_width = image_width
+            self.learning_rate = learning_rate
+            self.model_dir = model_dir
+            self.validation_split = validation_split
+            self.batch_size = batch_size
+
+
+class CNNBuild(Config, tf.keras.):
+    def __init__(self, 
+                 config: Config
+                 build_config):
+            
+            # initialize the super class
+        super().__init__(
+            image_dir = str(config.image_dir),
+            image_height = config.image_height,
+            image_width = config.image_width,
+            learning_rate = config.learning_rate,
+            model_dir = str(config.model_dir),
+            validation_split = config.validation_split,
+            batch_size = config.batch_size
+        )
+
+
+    def build_model(self, num_classes: int):
+        # Define the architecture of the model 
+        
+        # initialize the build_config or use an empty dictionary if build_config not initialized
+        # self.build_config = build_config or {}
+
+
+
+
+
+
+
+
+class NetworkLayout():
+
+    def __
+
+
+
+class ChordataNet(tf.keras.Model):
+
+    def __init__(self, num_classes):
+        super(ChordataNet, self).__init__()
+        self.conv1 = layers.Conv2D(32, (3, 3), activation='relu')
+        self.pool = layers.MaxPooling2D(pool_size=(2, 2))
+        self.flatten = layers.Flatten()
+        self.fc1 = layers.Dense(128, activation='relu')
+        self.fc2 = layers.Dense(num_classes, activation='softmax')
+
 
  
 # 2.) Check if we should use a parameter config file or not 
@@ -182,40 +237,4 @@ wandb.finish()
 
 
 
-# # 3) Standardization (simple rescaling)
-# normalization_layer = layers.Rescaling(1./255)
-
-# # 4) Combine augmentation + standardization
-# train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
-# train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
-# val_ds   = val_ds.map(lambda x, y: (normalization_layer(x), y))
-
-# # 5) Cache, shuffle, and prefetch
-# train_ds = train_ds.cache()\
-#                    .shuffle(1000)\
-#                    .prefetch(buffer_size=AUTOTUNE)
-
-# val_ds   = val_ds.cache()\
-#                  .prefetch(buffer_size=AUTOTUNE)
-
-# 6) Example model
-
-
-# model.compile(optimizer='adam',
-#               loss='categorical_crossentropy',
-#               metrics=['accuracy'])
-
-# # 7) Train
-# model.fit(
-#     train_ds,
-#     validation_data=val_ds,
-#     epochs=10, 
-#     callbacks=[
-#                       WandbMetricsLogger(log_freq=5),
-#                       WandbModelCheckpoint("models")
-#                     ]
-    
-
-# )
-
-
+f
