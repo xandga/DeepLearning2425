@@ -28,3 +28,7 @@ poetry.lock
 pyproject.toml
 
 *.pkl
+train_test_splits/New folder.zip
+inceptionv3_best_model.keras
+mobilenet_best_model.keras
+*.keras
