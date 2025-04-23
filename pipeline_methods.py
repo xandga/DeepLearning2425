@@ -102,7 +102,7 @@ def create_class_weights(labels_train):
     class_weights_dict = dict(enumerate(class_weights))
     print("Computed class weights:", class_weights_dict)
 
-    return class_weights
+    return class_weights_dict
 
 def create_datasets(train_df, test_df):
     """
@@ -154,4 +154,8 @@ def preprocess_pipeline(train, test, batch_size=8):
     test = test.cache().batch(8).prefetch(tf.data.AUTOTUNE)
 
     return train, test
+
+def minority_from_labels(labels, threshold=24):
+    unique, counts = np.unique(labels, return_counts=True)
+    return unique[counts <= threshold].tolist()
 
