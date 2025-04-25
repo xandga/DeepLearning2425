@@ -9,6 +9,7 @@ rare_species 1.zip
 \train_test_splits\baseline_image_50.pkl
 \train_test_splits\baseline_image_50_test.pkl
 \.venv
+\my_tuner_dir
 
 
 
@@ -32,3 +33,4 @@ pyproject.toml
 train_test_splits/New folder.zip
 inceptionv3_best_model.keras
 mobilenet_best_model.keras
+inceptionv3_best_model_noBG.keras
