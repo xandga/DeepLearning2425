@@ -15,9 +15,10 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_preprocess
 from tensorflow.keras import layers, models, optimizers
 from tensorflow.keras.regularizers import l2
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDatatest_dataset
 from tensorflow.keras.utils import load_img
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import f1_score
 
 # Cnidaria MoblieNetV2 Train
 
@@ -162,23 +163,23 @@ def minority_from_labels(labels, threshold=24):
     return unique[counts <= threshold].tolist()
 
 # Mollusca preprocessing 
-def create_generators(train_df, test_df, image_root_dir, 
+def create_test_datasets(train_df, test_df, image_root_dir, 
                       image_size=(128, 128), batch_size=16, 
                       x_col='filepath', y_col='family'):
     """
-    Creates train, validation, and test data generators.
+    Creates train, validation, and test data test_datasets.
 
     Args:
         train_df (pd.DataFrame): DataFrame for training and validation.
         test_df (pd.DataFrame): DataFrame for testing.
         image_root_dir (str): Path to the directory where images are stored.
         image_size (tuple): Target size for images.
-        batch_size (int): Batch size for generators.
+        batch_size (int): Batch size for test_datasets.
         x_col (str): Column name for image filepaths.
         y_col (str): Column name for labels.
 
     Returns:
-        train_generator, val_generator, test_generator
+        train_test_dataset, val_test_dataset, test_test_dataset
     """
     # Prepend full path to 'file_path' column if needed
     train_df = train_df.copy()
@@ -187,8 +188,8 @@ def create_generators(train_df, test_df, image_root_dir,
     train_df[x_col] = train_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
     test_df[x_col] = test_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
 
-    # Data generators
-    train_datagen = ImageDataGenerator(
+    # Data test_datasets
+    train_datagen = ImageDatatest_dataset(
         rescale=1.0 / 255,
         rotation_range=15,
         zoom_range=0.1,
@@ -196,10 +197,10 @@ def create_generators(train_df, test_df, image_root_dir,
         validation_split=0.2
     )
 
-    test_datagen = ImageDataGenerator(rescale=1.0 / 255)
+    test_datagen = ImageDatatest_dataset(rescale=1.0 / 255)
 
-    # Train generator
-    train_generator = train_datagen.flow_from_dataframe(
+    # Train test_dataset
+    train_test_dataset = train_datagen.flow_from_dataframe(
         dataframe=train_df,
         x_col=x_col,
         y_col=y_col,
@@ -211,8 +212,8 @@ def create_generators(train_df, test_df, image_root_dir,
         seed=4
     )
 
-    # Validation generator
-    val_generator = train_datagen.flow_from_dataframe(
+    # Validation test_dataset
+    val_test_dataset = train_datagen.flow_from_dataframe(
         dataframe=train_df,
         x_col=x_col,
         y_col=y_col,
@@ -224,8 +225,8 @@ def create_generators(train_df, test_df, image_root_dir,
         seed=4
     )
 
-    # Test generator
-    test_generator = test_datagen.flow_from_dataframe(
+    # Test test_dataset
+    test_test_dataset = test_datagen.flow_from_dataframe(
         dataframe=test_df,
         x_col=x_col,
         y_col=y_col,
@@ -235,7 +236,7 @@ def create_generators(train_df, test_df, image_root_dir,
         shuffle=False
     )
 
-    return train_generator, val_generator, test_generator
+    return train_test_dataset, val_test_dataset, test_test_dataset
 
 # Mollusca side by side preprocessing visualization
 def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128), batch_size=1, num_samples=5, x_col='filepath'):
@@ -246,7 +247,7 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
         train_df (pd.DataFrame): DataFrame for training images.
         image_root_dir (str): Root directory where images are stored.
         image_size (tuple): Target size for resizing (default (128, 128)).
-        batch_size (int): Batch size for preview generator (default 1).
+        batch_size (int): Batch size for preview test_dataset (default 1).
         num_samples (int): Number of samples to visualize (default 5).
         x_col (str): Column containing the full image paths (default 'filepath').
     """
@@ -256,7 +257,7 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
     sample_df[x_col] = sample_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
 
     # --- Define train_datagen exactly like your real augmentation during training ---
-    train_datagen = ImageDataGenerator(
+    train_datagen = ImageDatatest_dataset(
         rescale=1.0 / 255,
         rotation_range=15,
         zoom_range=0.1,
@@ -264,8 +265,8 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
         validation_split=0.2  # even if validation split is not used here, it's fine to match
     )
 
-    # Generator for preview
-    preview_generator = train_datagen.flow_from_dataframe(
+    # test_dataset for preview
+    preview_test_dataset = train_datagen.flow_from_dataframe(
         dataframe=sample_df,
         x_col=x_col,
         y_col=None,
@@ -283,7 +284,7 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
         original = load_img(original_path)
 
         # Processed image (resized + augmented + normalized)
-        processed = next(preview_generator)[0]
+        processed = next(preview_test_dataset)[0]
         processed = np.clip(processed, 0, 1)  # Keep pixel values in valid range [0,1]
 
         # Plot original
@@ -300,3 +301,22 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
 
     plt.tight_layout()
     plt.show()
+
+# f1 score evaluation
+def evaluate_f1(model, test_dataset):
+    """
+    Computes the F1 score for a Keras model given a test test_dataset.
+
+    Parameters:
+    - model: Trained model.
+    - test_dataset: Test test_dataset.
+
+    Returns:
+    - f1: Macro-averaged F1 score.
+    """
+    y_pred_probs = model.predict(test_dataset, verbose=0)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+    y_true = test_dataset.classes
+    f1 = f1_score(y_true, y_pred, average='macro')
+    
+    return f1
