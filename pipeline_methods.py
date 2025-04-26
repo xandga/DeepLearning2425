@@ -15,6 +15,8 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_preprocess
 from tensorflow.keras import layers, models, optimizers
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import load_img
 from sklearn.utils.class_weight import compute_class_weight
 
 # Cnidaria MoblieNetV2 Train
@@ -159,3 +161,142 @@ def minority_from_labels(labels, threshold=24):
     unique, counts = np.unique(labels, return_counts=True)
     return unique[counts <= threshold].tolist()
 
+# Mollusca preprocessing 
+def create_generators(train_df, test_df, image_root_dir, 
+                      image_size=(128, 128), batch_size=16, 
+                      x_col='filepath', y_col='family'):
+    """
+    Creates train, validation, and test data generators.
+
+    Args:
+        train_df (pd.DataFrame): DataFrame for training and validation.
+        test_df (pd.DataFrame): DataFrame for testing.
+        image_root_dir (str): Path to the directory where images are stored.
+        image_size (tuple): Target size for images.
+        batch_size (int): Batch size for generators.
+        x_col (str): Column name for image filepaths.
+        y_col (str): Column name for labels.
+
+    Returns:
+        train_generator, val_generator, test_generator
+    """
+    # Prepend full path to 'file_path' column if needed
+    train_df = train_df.copy()
+    test_df = test_df.copy()
+    
+    train_df[x_col] = train_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
+    test_df[x_col] = test_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
+
+    # Data generators
+    train_datagen = ImageDataGenerator(
+        rescale=1.0 / 255,
+        rotation_range=15,
+        zoom_range=0.1,
+        horizontal_flip=True,
+        validation_split=0.2
+    )
+
+    test_datagen = ImageDataGenerator(rescale=1.0 / 255)
+
+    # Train generator
+    train_generator = train_datagen.flow_from_dataframe(
+        dataframe=train_df,
+        x_col=x_col,
+        y_col=y_col,
+        target_size=image_size,
+        class_mode='categorical',
+        batch_size=batch_size,
+        subset='training',
+        shuffle=True,
+        seed=4
+    )
+
+    # Validation generator
+    val_generator = train_datagen.flow_from_dataframe(
+        dataframe=train_df,
+        x_col=x_col,
+        y_col=y_col,
+        target_size=image_size,
+        class_mode='categorical',
+        batch_size=batch_size,
+        subset='validation',
+        shuffle=True,
+        seed=4
+    )
+
+    # Test generator
+    test_generator = test_datagen.flow_from_dataframe(
+        dataframe=test_df,
+        x_col=x_col,
+        y_col=y_col,
+        target_size=image_size,
+        class_mode='categorical',
+        batch_size=1,
+        shuffle=False
+    )
+
+    return train_generator, val_generator, test_generator
+
+# Mollusca side by side preprocessing visualization
+def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128), batch_size=1, num_samples=5, x_col='filepath'):
+    """
+    Shows side-by-side comparison of original vs resized+augmented images using the same train_datagen as in training.
+
+    Args:
+        train_df (pd.DataFrame): DataFrame for training images.
+        image_root_dir (str): Root directory where images are stored.
+        image_size (tuple): Target size for resizing (default (128, 128)).
+        batch_size (int): Batch size for preview generator (default 1).
+        num_samples (int): Number of samples to visualize (default 5).
+        x_col (str): Column containing the full image paths (default 'filepath').
+    """
+
+    # Copy to avoid modifying original DataFrame
+    sample_df = train_df.sample(n=num_samples, random_state=4).reset_index(drop=True)
+    sample_df[x_col] = sample_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
+
+    # --- Define train_datagen exactly like your real augmentation during training ---
+    train_datagen = ImageDataGenerator(
+        rescale=1.0 / 255,
+        rotation_range=15,
+        zoom_range=0.1,
+        horizontal_flip=True,
+        validation_split=0.2  # even if validation split is not used here, it's fine to match
+    )
+
+    # Generator for preview
+    preview_generator = train_datagen.flow_from_dataframe(
+        dataframe=sample_df,
+        x_col=x_col,
+        y_col=None,
+        class_mode=None,
+        target_size=image_size,
+        batch_size=batch_size,
+        shuffle=False
+    )
+
+    plt.figure(figsize=(10, num_samples * 2.5))
+
+    for i in range(num_samples):
+        # Original image (raw, not resized or augmented)
+        original_path = sample_df.loc[i, x_col]
+        original = load_img(original_path)
+
+        # Processed image (resized + augmented + normalized)
+        processed = next(preview_generator)[0]
+        processed = np.clip(processed, 0, 1)  # Keep pixel values in valid range [0,1]
+
+        # Plot original
+        plt.subplot(num_samples, 2, 2 * i + 1)
+        plt.imshow(original)
+        plt.title("Original")
+        plt.axis('off')
+
+        # Plot processed
+        plt.subplot(num_samples, 2, 2 * i + 2)
+        plt.imshow(processed)
+        plt.title(f"Processed (Augmented {image_size[0]}x{image_size[1]})")
+        plt.axis('off')
+
+    plt.tight_layout()
+    plt.show()
