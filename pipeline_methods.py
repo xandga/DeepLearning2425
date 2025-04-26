@@ -18,6 +18,7 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import load_img
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.metrics import f1_score
 
 # Cnidaria MoblieNetV2 Train
 
@@ -300,3 +301,23 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
 
     plt.tight_layout()
     plt.show()
+
+
+# f1 score evaluation
+def evaluate_f1(model, test_dataset):
+    """
+    Computes the F1 score for a Keras model given a test test_dataset.
+
+    Parameters:
+    - model: Trained model.
+    - test_dataset: Test test_dataset.
+
+    Returns:
+    - f1: Macro-averaged F1 score.
+    """
+    y_pred_probs = model.predict(test_dataset, verbose=0)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+    y_true = test_dataset.classes
+    f1 = f1_score(y_true, y_pred, average='macro')
+    
+    return f1
