@@ -10,6 +10,7 @@ rare_species 1.zip
 \train_test_splits\baseline_image_50_test.pkl
 \.venv
 \my_tuner_dir
+\models\chordata_models
 
 
 
