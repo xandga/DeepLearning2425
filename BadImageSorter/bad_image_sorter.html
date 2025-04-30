@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad Image Sorter (By Folder)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        #folderSelector, #controls {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+         #folderSelector label,
+         #folderSelector input {
+            display: block;
+            margin: 10px auto;
+        }
+
+        #currentFolderDisplay {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #286090; /* Bootstrap primary blue */
+             min-height: 1.4em; /* Prevent layout shift when empty */
+             border-bottom: 2px solid #eee;
+             padding-bottom: 10px;
+        }
+
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #5cb85c; /* Bootstrap success green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #4cae4c;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #imageGrid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .image-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 220px; /* Slightly smaller to fit potentially more */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .image-card img {
+            max-width: 100%;
+            height: 150px; /* Adjust height if needed */
+            object-fit: contain;
+            display: block;
+            margin-bottom: 10px;
+            background-color: #eee;
+            border-radius: 4px;
+        }
+
+        .image-card .image-filename { /* Changed from image-path */
+            font-size: 0.8em;
+            color: #666;
+            word-break: break-all;
+            text-align: center;
+            margin-bottom: 10px;
+            min-height: 1.2em;
+        }
+
+        .image-card button.mark-bad {
+            background-color: #d9534f; /* Bootstrap danger red */
+            width: 80%;
+        }
+
+        .image-card button.mark-bad:hover:not(:disabled) {
+            background-color: #c9302c;
+        }
+
+        .image-card.marked-bad {
+            opacity: 0.6;
+            border-color: #d9534f;
+            background-color: #fdd;
+        }
+
+         .image-card.marked-bad button.mark-bad {
+             background-color: #aaa;
+             cursor: not-allowed;
+        }
+
+        #csvControls button {
+             background-color: #f0ad4e; /* Bootstrap warning orange */
+        }
+         #csvControls button:hover:not(:disabled) {
+             background-color: #ec971f;
+        }
+
+         /* Spinner Styles */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Bad Image Sorter (By Folder)</h1>
+
+    <div id="folderSelector">
+        <label for="folderInput">1. Select the 'rare_species' parent folder:</label>
+        <input type="file" id="folderInput" webkitdirectory directory multiple required>
+        <p><i>The tool needs access to read the file list within the selected folder. Images are processed locally in your browser.</i></p>
+    </div>
+
+     <div id="loader" class="loader"></div>
+
+    <div id="controls" style="display: none;">
+        <div id="currentFolderDisplay">Current Folder: -</div>
+        <button id="prevFolderBtn" disabled>Previous Folder</button>
+        <button id="nextFolderBtn" disabled>Next Folder</button>
+        <span id="folderInfo"></span>
+         <div id="csvControls" style="margin-top: 15px;">
+             <button id="downloadCsvBtn" disabled>Download Bad Images List (CSV)</button>
+             <span id="badCount">Marked as bad: 0</span>
+        </div>
+    </div>
+
+    <div id="imageGrid">
+        <!-- Image cards will be loaded here -->
+    </div>
+
+    <template id="imageCardTemplate">
+         <div class="image-card">
+            <img src="" alt="Image preview" loading="lazy">
+            <div class="image-filename"></div>
+            <button class="mark-bad">Mark as Bad</button>
+        </div>
+    </template>
+
+    <script>
+        const folderInput = document.getElementById('folderInput');
+        const imageGrid = document.getElementById('imageGrid');
+        const prevFolderBtn = document.getElementById('prevFolderBtn');
+        const nextFolderBtn = document.getElementById('nextFolderBtn');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const controlsDiv = document.getElementById('controls');
+        const currentFolderDisplay = document.getElementById('currentFolderDisplay');
+        const folderInfoSpan = document.getElementById('folderInfo');
+        const badCountSpan = document.getElementById('badCount');
+        const loader = document.getElementById('loader');
+        const imageCardTemplate = document.getElementById('imageCardTemplate');
+
+        let imagesByFolder = {}; // Stores { "folderPath": [ {file: File, relativePath: string, filename: string, id: number}, ... ] }
+        let sortedFolderPaths = []; // Stores ["folderPath1", "folderPath2", ...] in sorted order
+        let badImagePaths = new Set(); // Stores full relative paths of bad images
+        let currentFolderIndex = -1; // Index into sortedFolderPaths
+        let objectUrls = []; // To keep track of generated URLs for cleanup
+
+        // --- Event Listeners ---
+
+        folderInput.addEventListener('change', handleFolderSelection);
+        prevFolderBtn.addEventListener('click', () => changeFolder(-1));
+        nextFolderBtn.addEventListener('click', () => changeFolder(1));
+        downloadCsvBtn.addEventListener('click', downloadCSV);
+
+        // --- Functions ---
+
+        function handleFolderSelection(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) {
+                alert('No folder selected or folder is empty.');
+                return;
+            }
+
+            console.log(`Processing ${files.length} files...`);
+            showLoader(true);
+            controlsDiv.style.display = 'none';
+            imageGrid.innerHTML = '';
+            currentFolderDisplay.textContent = 'Current Folder: -'; // Reset display
+
+
+            // Reset state
+            imagesByFolder = {};
+            sortedFolderPaths = [];
+            badImagePaths.clear();
+            currentFolderIndex = -1;
+            cleanupObjectUrls();
+
+            setTimeout(() => { // Allow UI to update (show loader)
+                let imageIdCounter = 0;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/')) {
+                        const fullRelativePath = file.webkitRelativePath; // e.g., "rare_species/phylum_family/image.jpg"
+                        const pathParts = fullRelativePath.split('/');
+
+                        if (pathParts.length > 1) { // Ensure it's in a subfolder
+                            const filename = pathParts.pop(); // "image.jpg"
+                             // Path relative to the *selected* folder e.g. "phylum_family/image.jpg"
+                            const relativePathForCsv = pathParts.slice(1).join('/') + (filename ? '/' + filename : '');
+                             // The immediate parent directory within the selected folder, e.g. "phylum_family"
+                            const folderPath = pathParts.slice(1).join('/');
+
+
+                            if (!imagesByFolder[folderPath]) {
+                                imagesByFolder[folderPath] = [];
+                            }
+
+                            imagesByFolder[folderPath].push({
+                                file: file,
+                                relativePath: relativePathForCsv, // For CSV and identification
+                                filename: filename, // For display on card
+                                id: imageIdCounter++
+                            });
+                        } else {
+                             console.warn(`Skipping file directly in selected root: ${file.name}`);
+                        }
+                    }
+                }
+
+                sortedFolderPaths = Object.keys(imagesByFolder).sort();
+                console.log(`Found ${imageIdCounter} images across ${sortedFolderPaths.length} folders.`);
+                showLoader(false);
+
+                if (sortedFolderPaths.length > 0) {
+                    controlsDiv.style.display = 'block';
+                    updateBadCount();
+                    displayFolderBatch(0); // Display the first folder
+                } else {
+                    alert('No image files found within subfolders of the selected directory.');
+                    controlsDiv.style.display = 'none';
+                     currentFolderDisplay.textContent = 'No subfolders with images found.';
+                     updateFolderInfo(); // Update counts to show 0/0
+                }
+             }, 50);
+        }
+
+        function displayFolderBatch(folderIndex) {
+            if (folderIndex < 0 || folderIndex >= sortedFolderPaths.length) {
+                console.error("Invalid folder index:", folderIndex);
+                return;
+            }
+
+            currentFolderIndex = folderIndex;
+            const currentFolderPath = sortedFolderPaths[currentFolderIndex];
+            const currentFolderImages = imagesByFolder[currentFolderPath] || []; // Handle potential empty folder edge case
+
+            // Update UI
+            currentFolderDisplay.textContent = `Current Folder: ${currentFolderPath}`;
+            imageGrid.innerHTML = ''; // Clear current grid
+            cleanupObjectUrls(); // Clean up URLs from the previous folder
+
+            // Sort images within the folder alphabetically by filename for consistency
+            currentFolderImages.sort((a, b) => a.filename.localeCompare(b.filename));
+
+            currentFolderImages.forEach(imageData => {
+                const card = imageCardTemplate.content.cloneNode(true).querySelector('.image-card');
+                const img = card.querySelector('img');
+                const filenameDiv = card.querySelector('.image-filename');
+                const markBadBtn = card.querySelector('.mark-bad');
+
+                const objectURL = URL.createObjectURL(imageData.file);
+                objectUrls.push(objectURL); // Track for cleanup
+
+                img.src = objectURL;
+                img.alt = imageData.filename; // Alt text is just the filename now
+                filenameDiv.textContent = imageData.filename; // Display only filename on card
+                card.dataset.imagePath = imageData.relativePath; // Store the FULL relative path for marking
+
+                // Check if already marked as bad using the full relative path
+                if (badImagePaths.has(imageData.relativePath)) {
+                    card.classList.add('marked-bad');
+                    markBadBtn.disabled = true;
+                    markBadBtn.textContent = 'Marked Bad';
+                }
+
+                markBadBtn.addEventListener('click', () => {
+                    markAsBad(imageData.relativePath, card, markBadBtn); // Use full relative path
+                });
+
+                imageGrid.appendChild(card);
+            });
+
+            updateNavigationButtons();
+            updateFolderInfo();
+        }
+
+        function changeFolder(direction) {
+            const newFolderIndex = currentFolderIndex + direction;
+            if (newFolderIndex >= 0 && newFolderIndex < sortedFolderPaths.length) {
+                displayFolderBatch(newFolderIndex);
+            }
+        }
+
+        function markAsBad(imageRelativePath, cardElement, buttonElement) {
+            if (!badImagePaths.has(imageRelativePath)) {
+                badImagePaths.add(imageRelativePath);
+                cardElement.classList.add('marked-bad');
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Marked Bad';
+                updateBadCount();
+                console.log(`Marked as bad: ${imageRelativePath}`);
+            }
+        }
+
+        function updateNavigationButtons() {
+            prevFolderBtn.disabled = (currentFolderIndex <= 0);
+            nextFolderBtn.disabled = (currentFolderIndex >= sortedFolderPaths.length - 1);
+        }
+
+        function updateFolderInfo() {
+             const totalFolders = sortedFolderPaths.length;
+             if (totalFolders === 0) {
+                 folderInfoSpan.textContent = "0 of 0 Folders";
+                 return;
+             }
+            const currentNum = currentFolderIndex + 1;
+            folderInfoSpan.textContent = `Folder ${currentNum} of ${totalFolders}`;
+        }
+
+         function updateBadCount() {
+            const count = badImagePaths.size;
+            badCountSpan.textContent = `Marked as bad: ${count}`;
+            downloadCsvBtn.disabled = (count === 0);
+        }
+
+        function downloadCSV() {
+            if (badImagePaths.size === 0) {
+                alert("No images have been marked as bad.");
+                return;
+            }
+
+            const csvHeader = "BadImageRelativePath\n";
+            // Use the stored relative paths (e.g., "phylum_family/bad_image.jpg")
+            const csvRows = Array.from(badImagePaths).sort().join("\n");
+            const csvContent = csvHeader + csvRows;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "bad_images_list.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } else {
+                 alert("CSV download is not supported in your browser (or failed).");
+            }
+        }
+
+        function cleanupObjectUrls() {
+            objectUrls.forEach(url => URL.revokeObjectURL(url));
+            objectUrls = [];
+        }
+
+        function showLoader(show) {
+             loader.style.display = show ? 'block' : 'none';
+        }
+
+        // Initial state setup
+        controlsDiv.style.display = 'none';
+        showLoader(false);
+
+    </script>
+
+</body>
+</html>
