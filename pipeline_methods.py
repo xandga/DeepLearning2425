@@ -19,6 +19,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import load_img
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
 
 # Cnidaria MoblieNetV2 Train
 
@@ -162,7 +163,7 @@ def cnidaria_preprocess(test, batch_size=8):
         for idx, label in enumerate(sorted(test["family"].unique()))
     }
 
-    X_test  = np.stack(test["clahe_image"].values).astype("float32") / 255.0
+    X_test  = np.stack(test["clahe_image"].values).astype("float32")
     y_test  = np.array([label_to_index[label] for label in test["family"]])
     
     test = (
@@ -175,10 +176,60 @@ def cnidaria_preprocess(test, batch_size=8):
 
     return test
 
+# Arthtropoda preprocessing
+import os
+import numpy as np
+import tensorflow as tf
+
+def arthropoda_preprocess(df, image_root_dir, batch_size=8):
+    """
+    Build a tf.data.Dataset for arthropoda test data.
+
+    Args:
+      df: pd.DataFrame with columns ["family","file_path"]
+      image_root_dir: str, base directory to prepend to file_path
+      batch_size: int
+
+    Returns:
+      A tf.data.Dataset yielding (image_tensor, label) batches.
+    """
+    # 1) Build a label→index map
+    label_to_index = {
+        label: idx 
+        for idx, label in enumerate(sorted(df["family"].unique()))
+    }
+
+    # 2) Full file paths and numeric labels arrays
+    file_paths = df["file_path"]\
+        .apply(lambda p: os.path.join(image_root_dir, p))\
+        .values.tolist()
+    y_labels   = np.array([label_to_index[f] for f in df["family"]], dtype=np.int32)
+
+    # 3) Create a Dataset of (path, label)
+    ds = tf.data.Dataset.from_tensor_slices((file_paths, y_labels))
+
+    # 4) Load, cast to float32, then preprocess
+    def _load_and_process(path, label):
+        img = tf.io.read_file(path)
+        img = tf.image.decode_jpeg(img, channels=3)
+        img = tf.image.resize(img, (224, 224))            # ensure correct size
+        img = tf.cast(img, tf.float32)                    # ← important!
+        img = mobilenet_preprocess(img)                   # now safe to divide by floats
+        return img, label
+
+    ds = (
+        ds
+        .map(_load_and_process, num_parallel_calls=tf.data.AUTOTUNE)
+        .batch(batch_size)
+        .prefetch(tf.data.AUTOTUNE)
+    )
+    return ds
+
+
 
 
 # Mollusca preprocessing 
-def create_generators(train_df, test_df, image_root_dir, 
+def create_generators(test_df, image_root_dir, 
                       image_size=(128, 128), batch_size=16, 
                       x_col='filepath', y_col='family'):
     """
@@ -197,48 +248,48 @@ def create_generators(train_df, test_df, image_root_dir,
         train_generator, val_generator, test_generator
     """
     # Prepend full path to 'file_path' column if needed
-    train_df = train_df.copy()
+    # train_df = train_df.copy()
     test_df = test_df.copy()
     
-    train_df[x_col] = train_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
+    # train_df[x_col] = train_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
     test_df[x_col] = test_df['file_path'].apply(lambda x: os.path.join(image_root_dir, x))
 
-    # Data generators
-    train_datagen = ImageDataGenerator(
-        rescale=1.0 / 255,
-        rotation_range=15,
-        zoom_range=0.1,
-        horizontal_flip=True,
-        validation_split=0.2
-    )
+    # # Data generators
+    # train_datagen = ImageDataGenerator(
+    #     rescale=1.0 / 255,
+    #     rotation_range=15,
+    #     zoom_range=0.1,
+    #     horizontal_flip=True,
+    #     validation_split=0.2
+    # )
 
     test_datagen = ImageDataGenerator(rescale=1.0 / 255)
 
-    # Train generator
-    train_generator = train_datagen.flow_from_dataframe(
-        dataframe=train_df,
-        x_col=x_col,
-        y_col=y_col,
-        target_size=image_size,
-        class_mode='categorical',
-        batch_size=batch_size,
-        subset='training',
-        shuffle=True,
-        seed=4
-    )
+    # # Train generator
+    # train_generator = train_datagen.flow_from_dataframe(
+    #     dataframe=train_df,
+    #     x_col=x_col,
+    #     y_col=y_col,
+    #     target_size=image_size,
+    #     class_mode='categorical',
+    #     batch_size=batch_size,
+    #     subset='training',
+    #     shuffle=True,
+    #     seed=4
+    # )
 
-    # Validation generator
-    val_generator = train_datagen.flow_from_dataframe(
-        dataframe=train_df,
-        x_col=x_col,
-        y_col=y_col,
-        target_size=image_size,
-        class_mode='categorical',
-        batch_size=batch_size,
-        subset='validation',
-        shuffle=True,
-        seed=4
-    )
+    # # Validation generator
+    # val_generator = train_datagen.flow_from_dataframe(
+    #     dataframe=train_df,
+    #     x_col=x_col,
+    #     y_col=y_col,
+    #     target_size=image_size,
+    #     class_mode='categorical',
+    #     batch_size=batch_size,
+    #     subset='validation',
+    #     shuffle=True,
+    #     seed=4
+    # )
 
     # Test generator
     test_generator = test_datagen.flow_from_dataframe(
@@ -251,7 +302,7 @@ def create_generators(train_df, test_df, image_root_dir,
         shuffle=False
     )
 
-    return train_generator, val_generator, test_generator
+    return test_generator
 
 # Mollusca side by side preprocessing visualization
 def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128), batch_size=1, num_samples=5, x_col='filepath'):
@@ -355,3 +406,60 @@ def evaluate_f1(model, test_dataset):
     f1 = f1_score(y_true, y_pred, average='macro')
     
     return f1
+
+def show_results_phylum(test_ds, results, label_to_index):
+    """
+    test_ds:        tf.data.Dataset yielding (x_batch, y_batch)
+    results:        numpy array, shape (N, C)
+    label_to_index: dict mapping family_name -> index (0..C-1)
+    """
+    # --- 1) Predictions & ground truth ---
+    y_pred = np.argmax(results, axis=1)
+    y_true = np.concatenate([y_batch.numpy() for _, y_batch in test_ds], axis=0)
+
+    # --- 2) Build an ordered list of family names, length = number of output classes ---
+    index_to_label = {idx: fam for fam, idx in label_to_index.items()}
+    C = results.shape[1]
+    families = [index_to_label.get(i, f"Class_{i}") for i in range(C)]
+
+    # --- 3) Compute & print metrics ---
+    acc = accuracy_score(y_true, y_pred)
+    f1  = f1_score(y_true, y_pred, average='macro')
+
+    print(f"Accuracy:  {acc:.4f}")
+    print(f"Macro F1 : {f1:.4f}\n")
+    print("Classification Report:")
+    print(classification_report(
+        y_true,
+        y_pred,
+        target_names=families,
+        digits=4
+    ))
+
+    # --- 4) Confusion matrix & plot ---
+    cm = confusion_matrix(y_true, y_pred)
+    fig, ax = plt.subplots(figsize=(8, 8))
+    im = ax.imshow(cm, interpolation='nearest', aspect='auto')
+    ax.set_title("Confusion Matrix")
+    ax.set_xlabel("Predicted Family")
+    ax.set_ylabel("True Family")
+
+    ax.set_xticks(np.arange(C))
+    ax.set_yticks(np.arange(C))
+    ax.set_xticklabels(families, rotation=45, ha="right")
+    ax.set_yticklabels(families)
+
+    thresh = cm.max() / 2
+    for i in range(C):
+        for j in range(C):
+            ax.text(
+                j, i, cm[i, j],
+                ha="center", va="center",
+                color="white" if cm[i, j] > thresh else "black"
+            )
+
+    fig.colorbar(im, ax=ax)
+    plt.tight_layout()
+    plt.show()
+
+    return acc, f1
