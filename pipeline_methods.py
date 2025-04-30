@@ -145,22 +145,37 @@ def create_datasets(train_df, test_df):
 
     return train, test, labels_train, labels_test, label_to_index
 
-def preprocess_pipeline(train, test, batch_size=8):
-    # --- Training Preprocess Pipeline ---
-    train = train.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)
-    train = train.cache()
-    train = train.map(augment_image, num_parallel_calls=tf.data.AUTOTUNE)
-    train = train.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-    
-    # --- Test Preprocess Pipeline ---
-    test = test.map(process_image, num_parallel_calls=tf.data.AUTOTUNE)
-    test = test.cache().batch(8).prefetch(tf.data.AUTOTUNE)
-
-    return train, test
-
 def minority_from_labels(labels, threshold=24):
     unique, counts = np.unique(labels, return_counts=True)
     return unique[counts <= threshold].tolist()
+
+
+# Cnidaria preprocessing
+def process_image(image, label):
+    image = mobilenet_preprocess(image)  # Apply MobileNetV2 preprocessing
+    return image, label
+
+def cnidaria_preprocess(test, batch_size=8):
+
+    label_to_index = {
+        label: idx 
+        for idx, label in enumerate(sorted(test["family"].unique()))
+    }
+
+    X_test  = np.stack(test["clahe_image"].values).astype("float32") / 255.0
+    y_test  = np.array([label_to_index[label] for label in test["family"]])
+    
+    test = (
+        tf.data.Dataset.from_tensor_slices((X_test, y_test))
+        .map(process_image, num_parallel_calls=tf.data.AUTOTUNE)
+        .batch(batch_size)
+        .prefetch(tf.data.AUTOTUNE)
+    )
+
+
+    return test
+
+
 
 # Mollusca preprocessing 
 def create_generators(train_df, test_df, image_root_dir, 
@@ -302,6 +317,25 @@ def visualize_pipeline_processed(train_df, image_root_dir, image_size=(128, 128)
     plt.tight_layout()
     plt.show()
 
+
+def plot_loss(history):
+    """
+    Plot the training and validation loss over epochs.
+
+    Parameters:
+    - history: History object returned by model.fit() containing training/validation loss values.
+
+    Returns:
+    - None (displays a plot of training and validation loss)
+    """
+    plt.figure(figsize=(7, 2))
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training and Validation Loss')
+    plt.show()
 
 # f1 score evaluation
 def evaluate_f1(model, test_dataset):
