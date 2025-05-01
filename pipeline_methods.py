@@ -176,6 +176,29 @@ def cnidaria_preprocess(test, batch_size=8):
 
     return test
 
+def process_image(image, label):
+    image = mobilenet_preprocess(image)  # Apply MobileNetV2 preprocessing
+    return image, label
+
+def cnidaria_preprocess_custom(test, batch_size=32):
+
+    label_to_index = {
+        label: idx 
+        for idx, label in enumerate(sorted(test["family"].unique()))
+    }
+
+    X_test  = np.stack(test["clahe_image"].values).astype("float32")
+    y_test  = np.array([label_to_index[label] for label in test["family"]])
+    
+    test = (
+        tf.data.Dataset.from_tensor_slices((X_test, y_test))
+        .batch(batch_size)
+        .prefetch(tf.data.AUTOTUNE)
+    )
+
+
+    return test
+
 # Arthtropoda preprocessing
 import os
 import numpy as np
@@ -230,7 +253,7 @@ def arthropoda_preprocess(df, image_root_dir, batch_size=8):
 
 # Mollusca preprocessing 
 def create_generators(test_df, image_root_dir, 
-                      image_size=(128, 128), batch_size=16, 
+                      image_size=(224, 224), batch_size=16, 
                       x_col='filepath', y_col='family'):
     """
     Creates train, validation, and test data generators.
