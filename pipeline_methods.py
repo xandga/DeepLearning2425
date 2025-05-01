@@ -182,20 +182,20 @@ def process_image(image, label):
 
 def cnidaria_preprocess_custom(test, batch_size=32):
 
+    # 1) Build the label→index map from the train families
     label_to_index = {
         label: idx 
         for idx, label in enumerate(sorted(test["family"].unique()))
     }
 
-    X_test  = np.stack(test["clahe_image"].values).astype("float32")
-    y_test  = np.array([label_to_index[label] for label in test["family"]])
+    # 2) Convert DataFrame columns to NumPy arrays
+    X_test = np.stack(test["clahe_image"].values).astype("float32") / 255.0
+    y_test = np.array([label_to_index[label] for label in test["family"]])
     
-    test = (
-        tf.data.Dataset.from_tensor_slices((X_test, y_test))
+    test = (tf.data.Dataset.from_tensor_slices((X_test, y_test))
         .batch(batch_size)
         .prefetch(tf.data.AUTOTUNE)
     )
-
 
     return test
 
